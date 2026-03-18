@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Light Quest Assessment</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- React and ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <!-- Babel to compile the code in the browser -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body class="bg-slate-900">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState } = React;
+
+        // --- ICON SUBSTITUTES ---
+        const Icon = ({ symbol, size = 24, className = "" }) => (
+            <span className={className} style={{ fontSize: size, lineHeight: 1, display: 'inline-block' }}>{symbol}</span>
+        );
+        
+        const Sun = (p) => <Icon symbol="☀️" {...p} />;
+        const Moon = (p) => <Icon symbol="🌙" {...p} />;
+        const Zap = (p) => <Icon symbol="⚡" {...p} />;
+        const Shield = (p) => <Icon symbol="🛡️" {...p} />;
+        const Target = (p) => <Icon symbol="🎯" {...p} />;
+        const Play = (p) => <Icon symbol="▶️" {...p} />;
+        const CheckCircle = (p) => <Icon symbol="✅" {...p} />;
+        const XCircle = (p) => <Icon symbol="❌" {...p} />;
+        const Microscope = (p) => <Icon symbol="🔬" {...p} />;
+        const ClipboardList = (p) => <Icon symbol="📋" {...p} />;
+        const LineChart = (p) => <Icon symbol="📈" {...p} />;
+        const TestTube = (p) => <Icon symbol="🧪" {...p} />;
+        const Flame = (p) => <Icon symbol="🔥" {...p} />;
+        const Radio = (p) => <Icon symbol="📻" {...p} />;
+        const Activity = (p) => <Icon symbol="⚙️" {...p} />;
+        const Unlock = (p) => <Icon symbol="🔓" {...p} />;
+        const Lock = (p) => <Icon symbol="🔒" {...p} />;
+        const Search = (p) => <Icon symbol="🔍" {...p} />;
+
+        function App() {
+            const [gameState, setGameState] = useState('start');
+            const [firstName, setFirstName] = useState('');
+            const [lastName, setLastName] = useState('');
+            const [studentClass, setStudentClass] = useState('');
+            
+            const [scores, setScores] = useState({
+                y56_1c: 0, y56_1e: 0, y56_2c: 0, y56_2e: 0, y56_3c: 0, y56_3e: 0, y56_4c: 0, y56_4e: 0,
+                y56b_1c: 0, y56b_1e: 0, y56b_2c: 0, y56b_2e: 0, y56b_3c: 0, y56b_3e: 0, y56b_4c: 0, y56b_4e: 0,
+                y78_1c: 0, y78_1e: 0, y78_2c: 0, y78_2e: 0,
+                y910_1c: 0, y910_1e: 0, y910_2c: 0, y910_2e: 0
+            });
+            
+            const [progress, setProgress] = useState({ reached78: false, reached910: false, didRemedial: false });
+            const [feedback, setFeedback] = useState(null);
+            const [isSubmitting, setIsSubmitting] = useState(false);
+
+            const checkStage2 = (currentScores) => {
+                const total = currentScores.y56_1c + currentScores.y56_2c + currentScores.y56_3c + currentScores.y56_4c;
+                return total >= 3 ? 'intro_78' : 'remedial_intro';
+            };
+
+            const checkStage2Remedial = (currentScores) => {
+                const total = currentScores.y56b_1c + currentScores.y56b_2c + currentScores.y56b_3c + currentScores.y56b_4c;
+                return total >= 3 ? 'intro_78' : 'end';
+            };
+
+            const checkStage3 = (currentScores) => {
+                const total = currentScores.y78_1c + currentScores.y78_2c;
+                return total >= 2 ? 'intro_910' : 'end';
+            };
+
+            const quizGraph = {
+                // STAGE 1 (Core Concepts)
+                y56_1c: {
+                title: "Chamber 1: The Dark Room", type: "concept", icon: <Moon size={40} className="grayscale opacity-70" />,
+                scenario: "It's pitch black! To read the ancient map, you need a true source of light.",
+                question: "Which of these objects actually produces its own light (is luminous)?",
+                options: [
+                    { text: "The Moon", isCorrect: false, feedback: "The Moon doesn't make its own light. It reflects light from the Sun!", nextNode: "y56_1e" }, // A
+                    { text: "A Shiny Mirror", isCorrect: false, feedback: "A mirror doesn't create light; it only reflects light that is already there.", nextNode: "y56_1e" }, // B
+                    { text: "A Flaming Torch", isCorrect: true, feedback: "Correct! A torch converts energy into light. It is a luminous source!", nextNode: "y56_1e" } // C
+                ]
+                },
+                y56_1e: {
+                title: "Chamber 1: Scientific Investigation", type: "inquiry", icon: <TestTube size={40} className="opacity-80" />,
+                scenario: "You want to investigate how the distance of your torch affects the size of the shadow cast by an ancient idol.",
+                question: "To ensure this is a 'fair test', which variable must you purposefully CHANGE (your independent variable)?",
+                options: [
+                    { text: "The distance of the torch.", isCorrect: true, feedback: "Exactly! You change the distance, measure the shadow, and keep everything else the same.", nextNode: "y56_2c" }, // A
+                    { text: "The size of the shadow.", isCorrect: false, feedback: "The shadow size is what you MEASURE (the dependent variable).", nextNode: "y56_2c" }, // B
+                    { text: "The idol you are using.", isCorrect: false, feedback: "You must keep the idol the same, otherwise it's not a fair test!", nextNode: "y56_2c" } // C
+                ]
+                },
+                y56_2c: {
+                title: "Chamber 2: The Laser Gate", type: "concept", icon: <Target size={40} className="opacity-90" />,
+                scenario: "A light beam shoots from the wall. You need to hit the target to open the door.",
+                question: "Since light travels in a straight path, what is the best way to get the light around the 90-degree corner to the target?",
+                options: [
+                    { text: "Use a magnifying glass to curve the light.", isCorrect: false, feedback: "Lenses refract (bend) light, but usually to a focal point.", nextNode: "y56_2e" }, // A
+                    { text: "Place a flat mirror at an angle.", isCorrect: true, feedback: "Perfect! Light travels in straight lines, but reflects off smooth surfaces at predictable angles.", nextNode: "y56_2e" }, // B
+                    { text: "Put a piece of black paper in front of it.", isCorrect: false, feedback: "Black paper absorbs light, creating a shadow. It won't redirect it!", nextNode: "y56_2e" } // C
+                ]
+                },
+                y56_2e: {
+                title: "Chamber 2: Data & Accuracy", type: "inquiry", icon: <ClipboardList size={40} className="opacity-80" />,
+                scenario: "You measure the angle of reflection required to hit the target three times. You get: 44°, 46°, and 45°.",
+                question: "Why is it important in science to perform repeated trials like this?",
+                options: [
+                    { text: "To identify and reduce the impact of random errors.", isCorrect: true, feedback: "Spot on! Repeated trials help us find a reliable average and spot mistakes.", nextNode: "y56_3c" }, // A
+                    { text: "To make the investigation take longer so it looks better.", isCorrect: false, feedback: "Science is about accuracy, not just taking longer!", nextNode: "y56_3c" }, // B
+                    { text: "Because the law of reflection changes every time.", isCorrect: false, feedback: "The law of reflection is constant; it's our measurements that might have slight errors.", nextNode: "y56_3c" } // C
+                ]
+                },
+                y56_3c: {
+                title: "Chamber 3: The Crystal Bridge", type: "concept", icon: <Shield size={40} className="opacity-80" />,
+                scenario: "You must build a shield to completely block a blinding light trap, creating a dark shadow to hide in.",
+                question: "Based on how they handle light, what type of material do you need?",
+                options: [
+                    { text: "An opaque material (like thick stone)", isCorrect: true, feedback: "Correct! Opaque objects absorb or reflect all light, transmitting none, creating a solid shadow.", nextNode: "y56_3e" }, // A
+                    { text: "A transparent material (like clear glass)", isCorrect: false, feedback: "Transparent materials transmit almost all light. You would still be blinded!", nextNode: "y56_3e" }, // B
+                    { text: "A translucent material (like frosted glass)", isCorrect: false, feedback: "Translucent materials scatter light. It would still be too bright.", nextNode: "y56_3e" } // C
+                ]
+                },
+                y56_3e: {
+                title: "Chamber 3: Predictions & Patterns", type: "inquiry", icon: <LineChart size={40} className="opacity-80" />,
+                scenario: "Before choosing the stone, you test layers of translucent frosted glass.",
+                question: "Which of these is a reasoned scientific prediction regarding the frosted glass?",
+                options: [
+                    { text: "If I add more layers, the light will turn a different colour.", isCorrect: false, feedback: "Unless the glass is tinted, adding layers usually affects intensity.", nextNode: "y56_4c" }, // A
+                    { text: "The thickness of the glass has no relationship to the light.", isCorrect: false, feedback: "Thickness usually has a direct relationship with how much light is transmitted.", nextNode: "y56_4c" }, // B
+                    { text: "If I add more layers, the amount of transmitted light will decrease.", isCorrect: true, feedback: "Great prediction! More layers mean more light is absorbed or scattered.", nextNode: "y56_4c" } // C
+                ]
+                },
+                y56_4c: {
+                title: "Chamber 4: The Submerged Key", type: "concept", icon: <Zap size={40} className="opacity-80" />,
+                scenario: "The final key is at the bottom of a water pool. When you reach in with a straight stick to hook it, the stick looks broken at the surface!",
+                question: "Why does the stick appear bent in the water?",
+                options: [
+                    { text: "The water reflects the stick back to your eyes.", isCorrect: false, feedback: "Reflection happens on the surface, but doesn't explain the bent look.", nextNode: "y56_4e" }, // A
+                    { text: "Light bends (refracts) as it changes speed entering the denser water.", isCorrect: true, feedback: "Spot on! Refraction causes the light path to bend.", nextNode: "y56_4e" }, // B
+                    { text: "The water absorbs the light around the stick.", isCorrect: false, feedback: "Absorption makes things look darker, it doesn't bend images.", nextNode: "y56_4e" } // C
+                ]
+                },
+                y56_4e: {
+                title: "Chamber 4: Evaluating Investigations", type: "inquiry", icon: <Microscope size={40} className="opacity-80" />,
+                scenario: "You conclude: 'Light always bends when it enters a liquid.' Another explorer says, 'Wait, we only tested water! What about clear oil or syrup?'",
+                question: "What is the explorer doing by pointing this out?",
+                options: [
+                    { text: "Identifying an error in your measurement tools.", isCorrect: false, feedback: "Your measurements weren't wrong, but your conclusion was too broad.", nextNode: checkStage2 }, // A
+                    { text: "Proving that the first experiment was completely useless.", isCorrect: false, feedback: "The first experiment gave valid data for water, it just needs expanding.", nextNode: checkStage2 }, // B
+                    { text: "Suggesting improvements and posing questions for further investigation.", isCorrect: true, feedback: "Exactly! Good scientists always ask 'Does this hold true under other conditions?'", nextNode: checkStage2 } // C
+                ]
+                },
+
+                // STAGE 1 SECOND CHANCE (Remedial Path)
+                remedial_intro: {
+                type: "intro", title: "The Hidden Corridor", color: "emerald",
+                text: "The main door is locked, but you spot a hidden corridor! Let's review what we know about light and try another path.",
+                nextNode: "y56b_1c"
+                },
+                y56b_1c: {
+                title: "Corridor: Glowing Artefacts", type: "concept", icon: <Search size={40} className="opacity-80" />,
+                scenario: "You find a glowing green crystal and a shiny gold coin.",
+                question: "Which of these is a luminous source of light?",
+                options: [
+                    { text: "The glowing crystal.", isCorrect: true, feedback: "Correct! It is producing its own light, making it luminous.", nextNode: "y56b_1e" }, // A
+                    { text: "The shiny gold coin.", isCorrect: false, feedback: "The coin is non-luminous; it only reflects light from elsewhere.", nextNode: "y56b_1e" }, // B
+                    { text: "Neither of them.", isCorrect: false, feedback: "The glowing crystal produces light, so it is luminous.", nextNode: "y56b_1e" } // C
+                ]
+                },
+                y56b_1e: {
+                title: "Corridor: Identifying Errors", type: "inquiry", icon: <ClipboardList size={40} className="opacity-80" />,
+                scenario: "You try to measure how bright the crystal is, but your partner gets a totally different measurement.",
+                question: "What is a possible source of error in your investigation?",
+                options: [
+                    { text: "The crystal's magic changed.", isCorrect: false, feedback: "Science requires observable, natural explanations for errors.", nextNode: "y56b_2c" }, // A
+                    { text: "You wrote the numbers down too neatly.", isCorrect: false, feedback: "Neat data is good! It doesn't cause errors.", nextNode: "y56b_2c" }, // B
+                    { text: "You measured from different distances or had background light shining.", isCorrect: true, feedback: "Exactly! Background variables can easily cause measurement errors.", nextNode: "y56b_2c" } // C
+                ]
+                },
+                y56b_2c: {
+                title: "Corridor: The Gargoyle's Shadow", type: "concept", icon: <Moon size={40} className="opacity-80" />,
+                scenario: "A stone gargoyle is casting a shadow on the wall. You walk CLOSER to the gargoyle with your torch.",
+                question: "What happens to the shadow on the wall as the light source gets closer to the object?",
+                options: [
+                    { text: "It gets smaller.", isCorrect: false, feedback: "Actually, it gets larger because it blocks a wider angle of light.", nextNode: "y56b_2e" }, // A
+                    { text: "It gets larger.", isCorrect: true, feedback: "Correct! Being closer means the object blocks more of the straight light rays spreading from the torch.", nextNode: "y56b_2e" }, // B
+                    { text: "It changes colour.", isCorrect: false, feedback: "Distance affects the size and sharpness of a shadow, not its colour.", nextNode: "y56b_2e" } // C
+                ]
+                },
+                y56b_2e: {
+                title: "Corridor: Data Representations", type: "inquiry", icon: <LineChart size={40} className="opacity-80" />,
+                scenario: "You want to show your team exactly how the shadow size changes as you move the torch from 1m to 5m away.",
+                question: "What is the best way to construct a representation of this numerical data?",
+                options: [
+                    { text: "Draw a very detailed artistic sketch of the gargoyle.", isCorrect: false, feedback: "A sketch is nice, but it doesn't organise numerical data well.", nextNode: "y56b_3c" }, // A
+                    { text: "Create a line graph showing Distance vs Shadow Size.", isCorrect: true, feedback: "Spot on! Graphs are perfect for showing trends and relationships between variables.", nextNode: "y56b_3c" }, // B
+                    { text: "Write a fictional story about the shadow.", isCorrect: false, feedback: "Science representations need to be factual and clear for processing information.", nextNode: "y56b_3c" } // C
+                ]
+                },
+                y56b_3c: {
+                title: "Corridor: The Red Ruby", type: "concept", icon: <Sun size={40} className="opacity-80" />,
+                scenario: "You shine a white light on a giant ruby, and the ruby looks deep red.",
+                question: "Using the ideas of absorption and reflection, why do we see it as red?",
+                options: [
+                    { text: "It absorbs only red light and reflects everything else.", isCorrect: false, feedback: "If it absorbed the red light, none of it would reach our eyes to tell us it's red!", nextNode: "y56b_3e" }, // A
+                    { text: "It creates its own red light.", isCorrect: false, feedback: "The ruby is non-luminous; it relies on the white light shining on it.", nextNode: "y56b_3e" }, // B
+                    { text: "It absorbs all colours EXCEPT red, and reflects the red light to our eyes.", isCorrect: true, feedback: "Perfect! We see the colour of the light that bounces off (reflects from) the object.", nextNode: "y56b_3e" } // C
+                ]
+                },
+                y56b_3e: {
+                title: "Corridor: Communicating Science", type: "inquiry", icon: <Activity size={40} className="opacity-80" />,
+                scenario: "You need to warn other explorers about how the ruby reacts to light.",
+                question: "When communicating your findings, what is the best approach?",
+                options: [
+                    { text: "Use clear scientific vocabulary and a suitable presentation format.", isCorrect: true, feedback: "Correct! Good communication is tailored to the audience and uses accurate terms.", nextNode: "y56b_4c" }, // A
+                    { text: "Keep it a secret so you get all the glory.", isCorrect: false, feedback: "Science relies on sharing findings with others so knowledge grows!", nextNode: "y56b_4c" }, // B
+                    { text: "Use complicated slang so no one understands.", isCorrect: false, feedback: "Communication should always aim for clarity.", nextNode: "y56b_4c" } // C
+                ]
+                },
+                y56b_4c: {
+                title: "Corridor: The Three Gems", type: "concept", icon: <Shield size={40} className="opacity-80" />,
+                scenario: "You find three gems: a completely clear diamond, a cloudy quartz, and a solid black obsidian.",
+                question: "Which of these materials is 'translucent'?",
+                options: [
+                    { text: "The cloudy quartz.", isCorrect: true, feedback: "Correct! Translucent materials let some light pass through, but scatter it so you can't see clearly.", nextNode: "y56b_4e" }, // A
+                    { text: "The clear diamond.", isCorrect: false, feedback: "Clear materials that let all light through perfectly are transparent.", nextNode: "y56b_4e" }, // B
+                    { text: "The solid black obsidian.", isCorrect: false, feedback: "Materials that block all light are opaque.", nextNode: "y56b_4e" } // C
+                ]
+                },
+                y56b_4e: {
+                title: "Corridor: Managing Risks", type: "inquiry", icon: <TestTube size={40} className="opacity-80" />,
+                scenario: "You are testing these gems using a high-powered laser beam.",
+                question: "What is an important safety risk to manage during this investigation?",
+                options: [
+                    { text: "Ensuring the gems don't get scratched.", isCorrect: false, feedback: "That's good for the gem, but managing personal safety risks is more important.", nextNode: checkStage2Remedial }, // A
+                    { text: "Making sure the laser beam never points near anyone's eyes.", isCorrect: true, feedback: "Exactly! Scientists must always plan how to manage safety risks.", nextNode: checkStage2Remedial }, // B
+                    { text: "Making sure the room is as dark as possible.", isCorrect: false, feedback: "That might help the test, but it's not a safety risk management strategy.", nextNode: checkStage2Remedial } // C
+                ]
+                },
+
+                // STAGE 2 (Advanced Energy)
+                intro_78: {
+                type: "intro", title: "Stage 2: Advanced Energy Unlocked", color: "indigo",
+                text: "You've proven your foundational knowledge! You now enter the deeper catacombs, where puzzles require an understanding of Energy Transfers & Transformations.",
+                nextNode: "y78_1c"
+                },
+                y78_1c: {
+                title: "Level 2: The Ever-Burning Sconce", type: "concept", icon: <Flame size={40} className="opacity-80" />,
+                scenario: "You find a torch that has burned for centuries using a strange ancient fuel.",
+                question: "In terms of energy, what transformation is taking place as the torch burns?",
+                options: [
+                    { text: "Thermal Energy → Chemical Energy", isCorrect: false, feedback: "Backwards! It uses fuel (chemical) to create the heat.", nextNode: "y78_1e" }, // A
+                    { text: "Kinetic Energy → Light Energy", isCorrect: false, feedback: "There is no movement (kinetic) driving the torch.", nextNode: "y78_1e" }, // B
+                    { text: "Chemical Energy → Thermal & Light Energy", isCorrect: true, feedback: "Correct! The stored chemical potential energy transforms into kinetic heat and light.", nextNode: "y78_1e" } // C
+                ]
+                },
+                y78_1e: {
+                title: "Level 2: Energy Efficiency", type: "inquiry", icon: <Activity size={40} className="opacity-80" />,
+                scenario: "You need the torch purely to see in the dark, but it is making the room incredibly hot.",
+                question: "Based on this observation, what can you conclude about the torch's energy efficiency for providing light?",
+                options: [
+                    { text: "It is inefficient because a large proportion of input energy is converted to wasted heat.", isCorrect: true, feedback: "Exactly! Energy efficiency is about getting the *useful* output form you want.", nextNode: "y78_2c" }, // A
+                    { text: "It is 100% efficient because it produces a lot of heat.", isCorrect: false, feedback: "If you want light, heat is considered 'wasted' energy.", nextNode: "y78_2c" }, // B
+                    { text: "It is efficient because chemical energy is very powerful.", isCorrect: false, feedback: "Power and efficiency are different. Efficiency is about useful vs wasted output.", nextNode: "y78_2c" } // C
+                ]
+                },
+                y78_2c: {
+                title: "Level 2: The Sun Shaft", type: "concept", icon: <Sun size={40} className="opacity-80" />,
+                scenario: "A shaft of sunlight beams directly down through a hole in the ceiling from the surface.",
+                question: "How did the Sun's heat and light energy travel through the empty vacuum of space to reach Earth?",
+                options: [
+                    { text: "By Conduction", isCorrect: false, feedback: "Conduction requires direct contact between particles (like a hot spoon). Space has no particles!", nextNode: "y78_2e" }, // A
+                    { text: "By Convection", isCorrect: false, feedback: "Convection involves the movement of heated fluids (liquids/gases). Space is a vacuum!", nextNode: "y78_2e" }, // B
+                    { text: "By Radiation", isCorrect: true, feedback: "Correct! Radiation transfers energy as electromagnetic waves, which do not need a medium to travel.", nextNode: "y78_2e" } // C
+                ]
+                },
+                y78_2e: {
+                title: "Level 2: Scientific Representation", type: "inquiry", icon: <ClipboardList size={40} className="opacity-80" />,
+                scenario: "You decide to map out how the Sun's energy reaches the tomb and grows moss.",
+                question: "Why do scientists construct representations like 'Energy Chain Diagrams' with arrows?",
+                options: [
+                    { text: "Because energy physically looks like a series of arrows in real life.", isCorrect: false, feedback: "Arrows are just symbols we use to represent the transfer or transformation.", nextNode: checkStage3 }, // A
+                    { text: "To organise and process information about how energy flows through a system.", isCorrect: true, feedback: "Spot on! Models and diagrams help us visualise complex relationships.", nextNode: checkStage3 }, // B
+                    { text: "To identify sources of cultural error in the experiment.", isCorrect: false, feedback: "Diagrams map data; they don't inherently identify cultural considerations.", nextNode: checkStage3 } // C
+                ]
+                },
+
+                // STAGE 3 (Wave Physics)
+                intro_910: {
+                type: "intro", title: "Stage 3: Wave Physics Unlocked", color: "purple",
+                text: "Incredible! You have reached the Inner Sanctum. The final puzzles require advanced physics knowledge involving Waves, Photons, and the Electromagnetic Spectrum.",
+                nextNode: "y910_1c"
+                },
+                y910_1c: {
+                title: "Sanctum: The Invisible Trap", type: "concept", icon: <Radio size={40} className="opacity-80" />,
+                scenario: "An ancient alarm uses Ultraviolet (UV) light. You know UV can burn your skin, but the radio waves from your walkie-talkie are harmless.",
+                question: "Looking at the electromagnetic spectrum, why is UV light more dangerous than radio waves?",
+                options: [
+                    { text: "UV has a longer wavelength, lower frequency, and more energy.", isCorrect: false, feedback: "Longer wavelengths (like radio) have LOWER frequency and LOWER energy.", nextNode: "y910_1e" }, // A
+                    { text: "UV has a shorter wavelength, higher frequency, and more energy.", isCorrect: true, feedback: "Correct! Higher frequency waves carry more energy, which can damage cells.", nextNode: "y910_1e" }, // B
+                    { text: "UV waves are mechanical and require a medium to travel.", isCorrect: false, feedback: "Both are electromagnetic waves and can travel through a vacuum.", nextNode: "y910_1e" } // C
+                ]
+                },
+                y910_1e: {
+                title: "Sanctum: Data Relationships", type: "inquiry", icon: <LineChart size={40} className="opacity-80" />,
+                scenario: "You observe different traps: Infrared, Visible Light, and UV. You map their wavelengths and frequencies.",
+                question: "What mathematical relationship or trend will you observe between wavelength and frequency across the spectrum?",
+                options: [
+                    { text: "They are directly proportional (as wavelength increases, frequency increases).", isCorrect: false, feedback: "If waves are longer, fewer of them pass a point each second.", nextNode: "y910_2c" }, // A
+                    { text: "There is no relationship between them.", isCorrect: false, feedback: "They are strictly mathematically linked by the wave speed equation (v = fλ).", nextNode: "y910_2c" }, // B
+                    { text: "They are inversely proportional (as wavelength decreases, frequency increases).", isCorrect: true, feedback: "Correct! Because all EM waves travel at the speed of light, a shorter wave means higher frequency.", nextNode: "y910_2c" } // C
+                ]
+                },
+                y910_2c: {
+                title: "Sanctum: The Power Source", type: "concept", icon: <Zap size={40} className="opacity-80" />,
+                scenario: "The final door is powered by ancient solar panels. Light hits the panel and knocks electrons free to create electricity.",
+                question: "Which scientific model best describes light acting like little packets of energy knocking electrons out of place (the photoelectric effect)?",
+                options: [
+                    { text: "The Particle Model (Photons)", isCorrect: true, feedback: "Exactly! In this situation, light behaves as individual particles or 'quanta' of energy.", nextNode: "y910_2e" }, // A
+                    { text: "The Wave Model", isCorrect: false, feedback: "The wave model explains refraction and dispersion, but struggles to explain this specific effect.", nextNode: "y910_2e" }, // B
+                    { text: "The Convection Model", isCorrect: false, feedback: "Convection describes heat transfer in fluids, not the nature of light.", nextNode: "y910_2e" } // C
+                ]
+                },
+                y910_2e: {
+                title: "Sanctum: Evaluating Models", type: "inquiry", icon: <Microscope size={40} className="opacity-80" />,
+                scenario: "A fellow explorer sees the solar panel and concludes: 'This proves light is ONLY a particle, and the wave theory is completely wrong!'",
+                question: "How should you correct their reasoned conclusion?",
+                options: [
+                    { text: "Agree with them. Old theories are always proven completely wrong by new ones.", isCorrect: false, feedback: "Many old models are still incredibly useful in the right context.", nextNode: "end" }, // A
+                    { text: "Explain 'wave-particle duality' – light behaves as a wave in some situations and a particle in others.", isCorrect: true, feedback: "Perfect! Scientists choose the model that best explains the specific observation.", nextNode: "end" }, // B
+                    { text: "Tell them light is ONLY a wave.", isCorrect: false, feedback: "But you just saw it act like a particle!", nextNode: "end" } // C
+                ]
+                }
+            };
+
+            const handleStart = (e) => {
+                e.preventDefault();
+                if (firstName.trim() && lastName.trim() && studentClass) {
+                    setGameState('y56_1c');
+                }
+            };
+
+            const handleAnswer = (option) => {
+                if (option.isCorrect) {
+                setScores(prev => ({ ...prev, [gameState]: 1 }));
+                }
+                setFeedback({ correct: option.isCorrect, text: option.feedback, next: option.nextNode });
+            };
+
+            const advanceLevel = () => {
+                let nextNode = feedback.next;
+                if (typeof nextNode === 'function') {
+                nextNode = nextNode(scores);
+                }
+                if (nextNode === 'remedial_intro') setProgress(p => ({ ...p, didRemedial: true }));
+                if (nextNode === 'intro_78') setProgress(p => ({ ...p, reached78: true }));
+                if (nextNode === 'intro_910') setProgress(p => ({ ...p, reached910: true }));
+                setGameState(nextNode);
+                setFeedback(null);
+            };
+
+            const submitData = async () => {
+                setIsSubmitting(true);
+                const concept56 = scores.y56_1c + scores.y56_2c + scores.y56_3c + scores.y56_4c + 
+                                scores.y56b_1c + scores.y56b_2c + scores.y56b_3c + scores.y56b_4c;
+                const concept78 = scores.y78_1c + scores.y78_2c;
+                const concept910 = scores.y910_1c + scores.y910_2c;
+                const inquiryTotal = scores.y56_1e + scores.y56_2e + scores.y56_3e + scores.y56_4e + 
+                                    scores.y56b_1e + scores.y56b_2e + scores.y56b_3e + scores.y56b_4e +
+                                    scores.y78_1e + scores.y78_2e + 
+                                    scores.y910_1e + scores.y910_2e;
+                                    
+                const totalScore = concept56 + concept78 + concept910 + inquiryTotal;
+                
+                // Using the specific Google Apps Script URL provided
+                const scriptUrl = 'https://script.google.com/macros/s/AKfycbxHrKvYJKuz9D-6Mf5bdiNnFo3h1xGywtk0zWWkUusn2OcjQe3NEVqq6YBH_tX3X6RY/exec'; 
+
+                const payload = {
+                firstName: firstName, lastName: lastName, studentClass: studentClass, total: totalScore, 
+                c_stage1: concept56, c_stage2: concept78, c_stage3: concept910, inquiry: inquiryTotal, 
+                remedial_used: progress.didRemedial, details: scores
+                };
+
+                try {
+                await fetch(scriptUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify(payload)
+                });
+                
+                setTimeout(() => {
+                    setGameState('submitted');
+                    setIsSubmitting(false);
+                }, 1500);
+                } catch (error) {
+                console.error("Submission Error: ", error);
+                alert("There was an error saving your score. Please ensure you have an internet connection.");
+                setIsSubmitting(false);
+                }
+            };
+
+            if (gameState === 'start') {
+                return (
+                <div className="min-h-screen text-white flex flex-col items-center justify-center p-6 font-sans">
+                    <div className="max-w-md w-full bg-slate-800 p-8 rounded-2xl shadow-2xl border border-slate-700 text-center">
+                    <div className="flex justify-center mb-6 relative">
+                        <Sun size={64} className="opacity-100 drop-shadow-[0_0_15px_rgba(250,204,21,0.8)]" />
+                    </div>
+                    <h1 className="text-4xl font-bold mb-2 text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500">
+                        Light Quest
+                    </h1>
+                    <p className="text-slate-400 mb-8">Test your science knowledge to escape the Pharaoh's Tomb. Do you have what it takes to reach the Inner Sanctum?</p>
+                    
+                    <form onSubmit={handleStart} className="space-y-4">
+                        <div className="flex gap-4">
+                            <input 
+                            type="text" 
+                            placeholder="First Name" 
+                            className="w-full p-4 rounded-xl bg-slate-900 border border-slate-600 focus:border-yellow-400 focus:ring-2 focus:ring-yellow-400 outline-none transition-all text-white"
+                            value={firstName}
+                            onChange={(e) => setFirstName(e.target.value)}
+                            required
+                            />
+                            <input 
+                            type="text" 
+                            placeholder="Last Name" 
+                            className="w-full p-4 rounded-xl bg-slate-900 border border-slate-600 focus:border-yellow-400 focus:ring-2 focus:ring-yellow-400 outline-none transition-all text-white"
+                            value={lastName}
+                            onChange={(e) => setLastName(e.target.value)}
+                            required
+                            />
+                        </div>
+                        <select 
+                            className="w-full p-4 rounded-xl bg-slate-900 border border-slate-600 focus:border-yellow-400 focus:ring-2 focus:ring-yellow-400 outline-none transition-all text-white appearance-none"
+                            value={studentClass}
+                            onChange={(e) => setStudentClass(e.target.value)}
+                            required
+                        >
+                            <option value="" disabled>Select your class...</option>
+                            <option value="5A">5A</option>
+                            <option value="5B">5B</option>
+                            <option value="5C">5C</option>
+                            <option value="6A">6A</option>
+                            <option value="6B">6B</option>
+                        </select>
+                        <button type="submit" className="w-full bg-yellow-500 hover:bg-yellow-400 text-slate-900 font-bold py-4 px-6 rounded-xl flex items-center justify-center gap-2 transition-transform hover:scale-105">
+                        Start Expedition <Play size={20} />
+                        </button>
+                    </form>
+                    </div>
+                </div>
+                );
+            }
+
+            if (gameState === 'end') {
+                const concept56 = scores.y56_1c + scores.y56_2c + scores.y56_3c + scores.y56_4c + scores.y56b_1c + scores.y56b_2c + scores.y56b_3c + scores.y56b_4c;
+                const concept78 = scores.y78_1c + scores.y78_2c;
+                const concept910 = scores.y910_1c + scores.y910_2c;
+                const inquiryTotal = scores.y56_1e + scores.y56_2e + scores.y56_3e + scores.y56_4e + 
+                                    scores.y56b_1e + scores.y56b_2e + scores.y56b_3e + scores.y56b_4e +
+                                    scores.y78_1e + scores.y78_2e + scores.y910_1e + scores.y910_2e;
+                                    
+                const max56 = progress.didRemedial ? 8 : 4;
+                const maxInquiry = progress.didRemedial ? 8 + (progress.reached78 ? 2 : 0) + (progress.reached910 ? 2 : 0) : 4 + (progress.reached78 ? 2 : 0) + (progress.reached910 ? 2 : 0);
+
+                return (
+                <div className="min-h-screen text-white p-6 md:p-12 font-sans flex items-center justify-center">
+                    <div className="bg-slate-800 p-8 rounded-2xl shadow-xl text-center max-w-4xl w-full">
+                    <h2 className="text-4xl font-bold mb-2 text-yellow-400">Expedition Complete</h2>
+                    <p className="text-xl text-slate-300 mb-8">Analysis for Explorer {firstName} {lastName} ({studentClass}):</p>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8 text-left">
+                        <div className="bg-slate-900 rounded-xl p-5 border border-yellow-600/50 relative overflow-hidden">
+                        <h4 className="font-bold text-yellow-500 text-sm mb-4 flex items-center gap-2 border-b border-slate-700 pb-2">
+                            Stage 1: Core Concepts
+                        </h4>
+                        <div className="text-3xl font-bold text-white mb-2">{concept56} <span className="text-lg text-slate-500">/ {max56}</span></div>
+                        <p className="text-xs text-slate-400 uppercase tracking-wider">Concepts Mastered</p>
+                        </div>
+
+                        <div className={`bg-slate-900 rounded-xl p-5 border ${progress.reached78 ? 'border-indigo-600/50' : 'border-slate-700'} relative overflow-hidden`}>
+                        {!progress.reached78 && <div className="absolute inset-0 bg-slate-900/80 flex items-center justify-center z-10"><Lock size={32} /></div>}
+                        <h4 className="font-bold text-indigo-400 text-sm mb-4 flex items-center gap-2 border-b border-slate-700 pb-2">
+                            Stage 2: Adv. Energy
+                        </h4>
+                        <div className="text-3xl font-bold text-white mb-2">{concept78} <span className="text-lg text-slate-500">/ 2</span></div>
+                        <p className="text-xs text-slate-400 uppercase tracking-wider">Concepts Mastered</p>
+                        </div>
+
+                        <div className={`bg-slate-900 rounded-xl p-5 border ${progress.reached910 ? 'border-purple-600/50' : 'border-slate-700'} relative overflow-hidden`}>
+                        {!progress.reached910 && <div className="absolute inset-0 bg-slate-900/80 flex items-center justify-center z-10"><Lock size={32} /></div>}
+                        <h4 className="font-bold text-purple-400 text-sm mb-4 flex items-center gap-2 border-b border-slate-700 pb-2">
+                            Stage 3: Wave Theory
+                        </h4>
+                        <div className="text-3xl font-bold text-white mb-2">{concept910} <span className="text-lg text-slate-500">/ 2</span></div>
+                        <p className="text-xs text-slate-400 uppercase tracking-wider">Concepts Mastered</p>
+                        </div>
+
+                        <div className="bg-slate-900 rounded-xl p-5 border border-green-600/50 relative overflow-hidden">
+                        <h4 className="font-bold text-green-400 text-sm mb-4 flex items-center gap-2 border-b border-slate-700 pb-2">
+                            Inquiry Skills
+                        </h4>
+                        <div className="text-3xl font-bold text-white mb-2">{inquiryTotal} <span className="text-lg text-slate-500">/ {maxInquiry}</span></div>
+                        <p className="text-xs text-slate-400 uppercase tracking-wider">Total Demonstrated</p>
+                        </div>
+                    </div>
+
+                    <button onClick={submitData} disabled={isSubmitting} className="bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 px-8 rounded-xl flex items-center justify-center gap-2 mx-auto transition-colors disabled:opacity-70">
+                        {isSubmitting ? 'Sending to Teacher...' : 'Submit Final Report'}
+                    </button>
+                    </div>
+                </div>
+                );
+            }
+
+            if (gameState === 'submitted') {
+                return (
+                <div className="min-h-screen text-white flex items-center justify-center p-6">
+                    <div className="bg-slate-800 p-8 rounded-2xl shadow-xl text-center">
+                    <CheckCircle size={80} className="mx-auto mb-6 text-green-500" />
+                    <h2 className="text-3xl font-bold mb-4">Data Uploaded!</h2>
+                    <p className="text-slate-300 text-lg mb-8">Your results have been sent securely to your teacher.</p>
+                    <button onClick={() => window.location.reload()} className="text-slate-400 hover:text-white underline">Play again</button>
+                    </div>
+                </div>
+                );
+            }
+
+            const node = quizGraph[gameState];
+
+            if (node.type === 'intro') {
+                return (
+                <div className="min-h-screen text-white p-6 md:p-12 font-sans flex items-center justify-center">
+                    <div className={`bg-slate-800 p-8 rounded-2xl shadow-xl border-t-4 border-${node.color}-500 text-center max-w-xl`}>
+                    <div className="flex justify-center mb-6">
+                        <Unlock size={64} className={`text-${node.color}-400`} />
+                    </div>
+                    <h3 className="text-3xl font-bold mb-4">{node.title}</h3>
+                    <p className="text-xl text-slate-300 mb-8">{node.text}</p>
+                    <button onClick={() => { setGameState(node.nextNode); setFeedback(null); }} className={`bg-${node.color}-600 hover:bg-${node.color}-500 text-white px-8 py-4 rounded-xl font-bold transition-colors w-full`}>
+                        Enter Chamber
+                    </button>
+                    </div>
+                </div>
+                );
+            }
+
+            return (
+                <div className="min-h-screen text-white p-6 md:p-12 font-sans">
+                <div className="max-w-3xl mx-auto">
+                    <div className="flex justify-between items-center mb-8 border-b border-slate-700 pb-4">
+                    <h2 className="text-xl font-bold text-yellow-400">Agent: {firstName} {lastName}</h2>
+                    <div className="text-sm font-medium px-3 py-1 rounded-full bg-slate-800 text-slate-400">
+                        {node.type === 'concept' ? 'Science Concept' : 'Science Inquiry Skill'}
+                    </div>
+                    </div>
+
+                    <div className={`bg-slate-800 p-8 rounded-2xl shadow-xl border-t-4 ${node.type === 'concept' ? 'border-yellow-500' : 'border-blue-500'}`}>
+                    <div className="flex items-center gap-4 mb-6">
+                        <div className="bg-slate-900 p-3 rounded-xl">{node.icon}</div>
+                        <h3 className="text-2xl font-bold">{node.title}</h3>
+                    </div>
+                    
+                    <p className="mb-6 text-slate-300 text-lg italic bg-slate-900/50 p-4 rounded-lg border-l-4 border-slate-600">
+                        {node.scenario}
+                    </p>
+
+                    <p className="mb-6 text-xl font-semibold">{node.question}</p>
+
+                    <div className="space-y-3">
+                        {node.options.map((option, idx) => (
+                        <button key={idx} disabled={feedback !== null} onClick={() => handleAnswer(option)} className="w-full p-4 bg-slate-700 hover:bg-slate-600 rounded-xl text-left font-medium transition-colors disabled:opacity-50">
+                            {option.text}
+                        </button>
+                        ))}
+                    </div>
+
+                    {feedback && (
+                        <div className={`mt-6 p-6 rounded-xl border ${feedback.correct ? 'bg-green-900/50 border-green-500' : 'bg-red-900/50 border-red-500'}`}>
+                        <div className="flex items-start gap-3">
+                            {feedback.correct ? <CheckCircle size={32} className="text-green-400 shrink-0" /> : <XCircle size={32} className="text-red-400 shrink-0" />}
+                            <div>
+                            <p className="text-lg font-medium text-white mb-4">{feedback.text}</p>
+                            <button onClick={advanceLevel} className="bg-white text-slate-900 px-6 py-2 rounded-lg font-bold hover:bg-slate-200 transition-colors">
+                                Next Question
+                            </button>
+                            </div>
+                        </div>
+                        </div>
+                    )}
+                    </div>
+                </div>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
