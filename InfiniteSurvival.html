@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lux Reflector - Infinite Survival</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #0a0a0a;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        canvas {
+            display: block;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+        }
+        #ui-layer {
+            position: absolute;
+            top: 20px;
+            pointer-events: none;
+            color: white;
+            text-align: center;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+
+<script>
+let core;
+let mirror;
+let orbs = [];
+let powerups = [];
+let score = 0;
+let gameOver = false;
+let refractionTimer = 0;
+let spawnRate = 60; // frames between spawns
+let difficultyTimer = 0;
+let particles = [];
+let dust = [];
+let screenShake = 0;
+
+function setup() {
+    createCanvas(windowWidth, windowHeight);
+    core = { x: width / 2, y: height / 2, radius: 25 };
+    mirror = { angle: 0, dist: 80, width: 40, thickness: 8 };
+    
+    // Initialize background dust
+    for (let i = 0; i < 100; i++) {
+        dust.push({
+            x: random(width), y: random(height),
+            speed: random(0.2, 1), size: random(1, 3)
+        });
+    }
+}
+
+function draw() {
+    background(10, 10, 15);
+
+    if (screenShake > 0) {
+        translate(random(-screenShake, screenShake), random(-screenShake, screenShake));
+        screenShake *= 0.9;
+        if (screenShake < 0.5) screenShake = 0;
+    }
+
+    if (gameOver) {
+        drawGameOver();
+        return;
+    }
+
+    updateGame();
+    drawGame();
+}
+
+function updateGame() {
+    // 1. Update Difficulty
+    difficultyTimer++;
+    if (difficultyTimer % 300 === 0) { // Every 5 seconds
+        spawnRate = max(15, spawnRate - 2);
+    }
+
+    // 2. Handle Inputs/Mirror
+    let targetAngle = atan2(mouseY - core.y, mouseX - core.x);
+    mirror.angle = targetAngle;
+
+    // 3. Spawning
+    if (frameCount % floor(spawnRate) === 0) {
+        spawnOrb();
+    }
+    if (frameCount % 600 === 0) { // Every 10 seconds
+        spawnPowerup();
+    }
+
+    // 4. Update Orbs
+    for (let i = orbs.length - 1; i >= 0; i--) {
+        orbs[i].update();
+        if (orbs[i].hitCore()) {
+            gameOver = true;
+            screenShake = 20; // Trigger screen shake
+            spawnParticles(core.x, core.y, 50, color(255, 100, 100)); // Core explosion
+        }
+        if (orbs[i].dead) {
+            spawnParticles(orbs[i].x, orbs[i].y, 15, color(255, 255, 200)); // Orb explosion
+            orbs.splice(i, 1);
+            score += 10;
+        }
+    }
+
+    // 5. Update Powerups
+    for (let i = powerups.length - 1; i >= 0; i--) {
+        if (powerups[i].checkHit()) {
+            refractionTimer = 400; // ~6.6 seconds at 60fps
+            spawnParticles(powerups[i].x, powerups[i].y, 30, color(0, 200, 255)); // Powerup sparks
+            powerups.splice(i, 1);
+        }
+    }
+    if (refractionTimer > 0) refractionTimer--;
+
+    // 6. Update Particles & Dust
+    for (let i = particles.length - 1; i >= 0; i--) {
+        particles[i].update();
+        if (particles[i].alpha <= 0) particles.splice(i, 1);
+    }
+    for (let d of dust) {
+        d.y += d.speed;
+        if (d.y > height) {
+            d.y = 0;
+            d.x = random(width);
+        }
+    }
+}
+
+function drawGame() {
+    // Draw Dust
+    noStroke();
+    fill(255, 255, 255, 30);
+    for (let d of dust) {
+        ellipse(d.x, d.y, d.size);
+    }
+
+    // Draw Light Core with subtle pulsing
+    let pulse = sin(frameCount * 0.05) * 5;
+    noStroke();
+    fill(255, 255, 200, 50);
+    ellipse(core.x, core.y, core.radius * 2.5 + pulse);
+    fill(255, 255, 255);
+    ellipse(core.x, core.y, core.radius * 2 + pulse * 0.5);
+
+    // Calculate Mirror Position
+    let mx = core.x + cos(mirror.angle) * mirror.dist;
+    let my = core.y + sin(mirror.angle) * mirror.dist;
+
+    // Draw Beam from Core to Mirror
+    stroke(255, 255, 200);
+    strokeWeight(4);
+    line(core.x, core.y, mx, my);
+
+    // Draw Reflected Beams
+    drawReflectedBeams(mx, my, mirror.angle);
+
+    // Draw Mirror
+    push();
+    translate(mx, my);
+    rotate(mirror.angle + HALF_PI);
+    noStroke();
+    fill(200, 220, 255);
+    rectMode(CENTER);
+    rect(0, 0, mirror.width, mirror.thickness, 4);
+    pop();
+
+    // Draw Orbs
+    for (let orb of orbs) {
+        orb.display();
+    }
+
+    // Draw Particles
+    for (let p of particles) {
+        p.display();
+    }
+
+    // Draw Powerups
+    for (let p of powerups) {
+        p.display();
+    }
+
+    // UI
+    fill(255);
+    noStroke();
+    textSize(24);
+    textAlign(CENTER);
+    text(`SCORE: ${score}`, width / 2, 40);
+    
+    if (refractionTimer > 0) {
+        fill(100, 255, 255);
+        textSize(16);
+        text("REFRACTION ACTIVE", width / 2, 70);
+        rectMode(CORNER);
+        rect(width/2 - 50, 80, refractionTimer / 4, 5);
+    }
+}
+
+function drawReflectedBeams(x, y, angle) {
+    let angles = [angle];
+    if (refractionTimer > 0) {
+        angles = [angle - 0.3, angle, angle + 0.3];
+    }
+
+    drawingContext.shadowBlur = 15;
+    drawingContext.shadowColor = 'white';
+    stroke(255, 255, 200, 200);
+    strokeWeight(6);
+
+    for (let a of angles) {
+        let lx = x + cos(a) * 2000;
+        let ly = y + sin(a) * 2000;
+        line(x, y, lx, ly);
+
+        // Check for hits against orbs along this specific beam
+        for (let orb of orbs) {
+            if (lineCircleCollision(x, y, lx, ly, orb.x, orb.y, orb.radius)) {
+                orb.dead = true;
+            }
+        }
+    }
+    drawingContext.shadowBlur = 0;
+}
+
+function spawnOrb() {
+    let angle = random(TWO_PI);
+    let dist = max(width, height);
+    let x = core.x + cos(angle) * dist;
+    let y = core.y + sin(angle) * dist;
+    let speed = 1.5 + (score / 500);
+    orbs.push(new ShadowOrb(x, y, speed));
+}
+
+function spawnPowerup() {
+    powerups.push(new Powerup(random(100, width-100), random(100, height-100)));
+}
+
+function spawnParticles(x, y, count, pColor) {
+    for (let i = 0; i < count; i++) {
+        particles.push(new Particle(x, y, pColor));
+    }
+}
+
+class Particle {
+    constructor(x, y, pColor) {
+        this.x = x;
+        this.y = y;
+        let angle = random(TWO_PI);
+        let speed = random(1, 6);
+        this.vx = cos(angle) * speed;
+        this.vy = sin(angle) * speed;
+        this.alpha = 255;
+        this.color = pColor;
+        this.size = random(2, 6);
+    }
+    
+    update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.vx *= 0.92; // friction
+        this.vy *= 0.92;
+        this.alpha -= 8;
+    }
+    
+    display() {
+        noStroke();
+        fill(red(this.color), green(this.color), blue(this.color), this.alpha);
+        ellipse(this.x, this.y, this.size);
+    }
+}
+
+class ShadowOrb {
+    constructor(x, y, speed) {
+        this.x = x;
+        this.y = y;
+        this.speed = speed;
+        this.radius = 15;
+        this.dead = false;
+    }
+
+    update() {
+        let angle = atan2(core.y - this.y, core.x - this.x);
+        this.x += cos(angle) * this.speed;
+        this.y += sin(angle) * this.speed;
+    }
+
+    display() {
+        noStroke();
+        // Menacing red aura for the shadow orbs
+        drawingContext.shadowBlur = 15;
+        drawingContext.shadowColor = 'rgba(255, 50, 50, 0.6)';
+        fill(40, 40, 50);
+        ellipse(this.x, this.y, this.radius * 2);
+        drawingContext.shadowBlur = 0;
+        
+        fill(20, 20, 25, 150);
+        ellipse(this.x, this.y, this.radius * 2.5);
+    }
+
+    hitCore() {
+        return dist(this.x, this.y, core.x, core.y) < core.radius + this.radius;
+    }
+}
+
+class Powerup {
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.radius = 12;
+        this.pulse = 0;
+    }
+
+    display() {
+        this.pulse += 0.1;
+        let s = this.radius + sin(this.pulse) * 5;
+        fill(0, 200, 255, 150);
+        ellipse(this.x, this.y, s * 2);
+        fill(255);
+        ellipse(this.x, this.y, this.radius);
+    }
+
+    checkHit() {
+        // Player collects by moving mirror beam over it
+        // Check mirror position for proximity collection or beam intersection
+        let mx = core.x + cos(mirror.angle) * mirror.dist;
+        let my = core.y + sin(mirror.angle) * mirror.dist;
+        
+        // Simple proximity to mirror for easier mobile/touch collection
+        return dist(this.x, this.y, mx, my) < 40;
+    }
+}
+
+// Math Utility: Intersection of Line Segment and Circle
+function lineCircleCollision(x1, y1, x2, y2, cx, cy, r) {
+    let dx = x2 - x1;
+    let dy = y2 - y1;
+    let len = sqrt(dx * dx + dy * dy);
+    let dot = (((cx - x1) * dx) + ((cy - y1) * dy)) / pow(len, 2);
+    let closestX = x1 + (dot * dx);
+    let closestY = y1 + (dot * dy);
+
+    if (!onSegment(x1, y1, x2, y2, closestX, closestY)) return false;
+
+    let d = dist(closestX, closestY, cx, cy);
+    return d < r;
+}
+
+function onSegment(x1, y1, x2, y2, px, py) {
+    let d1 = dist(px, py, x1, y1);
+    let d2 = dist(px, py, x2, y2);
+    let lineLen = dist(x1, y1, x2, y2);
+    let buffer = 0.1; 
+    return d1 + d2 >= lineLen - buffer && d1 + d2 <= lineLen + buffer;
+}
+
+function drawGameOver() {
+    textAlign(CENTER);
+    fill(255);
+    textSize(50);
+    text("CORE EXTINGUISHED", width / 2, height / 2 - 20);
+    textSize(20);
+    fill(255, 150, 150);
+    text(`FINAL SCORE: ${score}`, width / 2, height / 2 + 30);
+    fill(200);
+    text("CLICK OR TOUCH TO RESTART", width / 2, height / 2 + 70);
+}
+
+function mousePressed() {
+    if (gameOver) {
+        score = 0;
+        orbs = [];
+        powerups = [];
+        particles = [];
+        spawnRate = 60;
+        difficultyTimer = 0;
+        screenShake = 0;
+        gameOver = false;
+    }
+}
+
+function windowResized() {
+    resizeCanvas(windowWidth, windowHeight);
+    core.x = width / 2;
+    core.y = height / 2;
+}
+</script>
+</body>
+</html>
